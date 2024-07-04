@@ -1,0 +1,114 @@
+<?php
+/////////////////// เก็บข้อมูล ////////////////////////////////////   
+    $arrakpi_name = array();
+    $arra_name = array();
+    $arrakpi = array ();
+    $arrakpi_name = array("kpi_id","kpi_1_r1","kpi_2_r1","kpi_3_r1","kpi_4_r1","kpi_5_r1","kpi_6_r1","kpi_1_r2","kpi_2_r2","kpi_3_r2","kpi_4_r2","kpi_5_r2","kpi_6_r2");
+    $arra_cancle= array("อัพเดทข้อมูลที่ตนเองดูแล น้อยกว่า 4 วัน","ตรวจสอบการเขียนโค๊ดและฐานข้อมูลที่พัฒนาให้ถูกต้อง");
+/////////////////// database //////////////////////////////////// 
+    $arrcheckcon = $this->CheckcodeModel->check_con($year);
+    $sql1="SELECT * FROM kpi_info_detail";  
+    $data_list=$this->db->query($sql1)->result();
+    $sql2="SELECT * FROM kpi_info";
+    $query2 = $this->db->query($sql2)->result();
+    $sql2 = "SELECT * FROM kpi_item where group_type ='person'";
+    $data_list2 = $this->db->query($sql2)->result();
+    $arrpersonedit = $this->CheckcodeModel->kpi_edit();
+    foreach ($data_list2 as $row){
+        if($row -> kpi_id !=$kpi_id){ //หัวตราง ($kpi_id เอา มาจาก checkcode)
+            continue;
+        }
+        $arra_name[$row -> item_id]['ITEM_NAME'] = $row -> item_name;
+        $arra_name[$row -> item_id]['ITEM_ID'] = $row -> item_id; 
+    }
+//////////////// kpi_item ///////////////////////////////////////
+    $kpi_item = array();
+    foreach ($data_list as $row) { //ข้อมูลข้างใน
+        $ids = $row->ids;
+        $kpi_item_id = $row->kpi_item_id;
+        foreach ($arrakpi_name as $key) {
+            $kpi_item[$ids][$kpi_item_id][$key] = $row->$key;
+        }
+    }
+    function generateTablehead($value, $style = '') {
+        return '<th width="45" align="center" style="border-right: 1px solid #c9c9c9;">' .$value. '</th>';
+    }    
+    function generateTableCell($value, $style = '') {
+        return '<td align="center" width="180" style="margin: 3px; padding: 3px; border-left: 1px solid #c9c9c9; border-bottom: 1px solid #c9c9c9;">' . $value . '</td>';
+    }    
+    // print_r($kpi_item);
+    // die;
+?>
+    <?php foreach ($arra_name as $row) { //วน loop จนหัว
+        $count=0;
+        $ans = $row['ITEM_NAME'];
+        if (in_array($ans,$arra_cancle)){ //ไม่แสดงผล พิเศษ 4 กับ 5
+            continue;
+        }
+        ?> 
+        <div class="grid_12">
+        <div id="blocks" class="box tabbed">
+        <div class="header">
+            <h3><?= 'ข้อที่ '.$row['ITEM_ID'].' - '.@$ans; ?></h3> 
+        </div>
+        <div class="content" style="padding: 10px;">
+
+            <table width="100%">
+                <tr bgcolor="#97f7ff">
+                <?php foreach ($arrakpi_name as $key) { //พิมพ์ตราง
+                        if ($key=="kpi_1_r1"){
+                            echo '<th width="45" align="center" style="border-right: 1px solid #c9c9c9;">'.'ชื่อ'.'</th>';
+                        }
+                        if ($key=="kpi_1_r2"){
+                            echo '<td width="30" style="margin: 3px; padding: 3px; border-left: 1px solid #c9c9c9; border-bottom: 1px solid #c9c9c9; background-color: coral"></td>';
+                        }
+                        if ($key=="kpi_id"){
+                            continue;
+                        }
+                        $value = isset($key) ? $key : '';
+                        $style = ($key == 'kpi_1_r1' || $key == 'kpi_1_r2') ? 'border-left: 1px solid #c9c9c9;' : '';
+                        echo generateTablehead($value, $style);
+                        }?>
+                </tr>
+                    <?php
+                    $kpi_item_id = $row['ITEM_ID'];//วน loop ข้อมูล
+                    foreach (@$kpi_item as $row3):
+                    if(!isset($row3[$kpi_item_id]["kpi_1_r1"])){
+                        continue;
+                    }
+                    $kpi_id = isset($row3[$kpi_item_id]["kpi_id"]) ? $row3[$kpi_item_id]["kpi_id"] : '';
+                        $kpi_name = '';
+                    foreach ($query2 as $row2) {
+                        if ($row2->kpi_id == $kpi_id) {
+                            $kpi_name = $row2->kpi_name;
+                            break;
+                        }
+                    }
+                    ?>
+                    <tr>
+                    <td align="center" width="180" style="margin: 3px; padding: 3px; border-right: 1px solid #c9c9c9; border-bottom: 1px solid #c9c9c9; "><?= @$kpi_name; ?></td>
+                    <?php foreach ($arrakpi_name as $key) {
+                        if ($key=="kpi_1_r2"){
+                            echo '<td width="30" style="margin: 3px; padding: 3px; border-left: 1px solid #c9c9c9; border-bottom: 1px solid #c9c9c9; background-color: coral"></td>';
+                        }
+                        if ($key=="kpi_id"){
+                            continue;
+                        }
+                        $count+=1;
+                        $value = isset($row3[$kpi_item_id][$key]) ? $row3[$kpi_item_id][$key] : '';
+                        $style = ($key == 'kpi_1_r1' || $key == 'kpi_1_r2') ? 'border-left: 1px solid #c9c9c9;' : '';
+                        echo generateTableCell($value, $style);
+                        }?>
+                <?php endforeach; ?>
+                <?php if ($count==0): // ถ้าไม่ข้อมูลแสดง "ไม่มีข้อมูล"
+                    ?>
+                <tr>
+                    <td colspan="14" style="text-align:center;">ไม่มีข้อมูล</td>
+                </tr> 
+                <?php else: ?>
+                <?php endif; ?>   
+            </table>
+            </div>
+    </div>
+</div>
+<?php }?>
